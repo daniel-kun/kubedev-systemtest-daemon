@@ -1,0 +1,27 @@
+{
+    "name": "kubedev-systemtest-daemon",
+    "description": "A daemon service used by kubedev when system-testing CronJobs",
+    "imageRegistry": "none",
+    "deployments": {
+        "kubedev-systemtest-daemon": {
+            "ports": {
+                "http": {
+                    "container": 5000,
+                    "dev": 5000
+                }
+            },
+            "required-envs": {
+                "KUBEDEV_SYSTEMTEST_DAEMON_APIKEY": {
+                    "documentation": "A temporary API key for this daemon instance",
+                    "build": false,
+                    "container": true
+                },
+                "KUBEDEV_SYSTEMTEST_DAEMON_DOCKER_COMMAND": {
+                    "documentation": "The docker command to be executed when the API endpoint /execute is POSTed",
+                    "build": false,
+                    "container": true
+                }
+            }
+        }
+    }
+}
