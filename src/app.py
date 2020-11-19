@@ -1,19 +1,23 @@
+import json
 import os
-import subprocess
+from uuid import uuid4
 
 from flask import Flask, Response, request
 
+from .run import run_cronjob
+
 apiKey = os.environ['KUBEDEV_SYSTEMTEST_DAEMON_APIKEY']
-dockerCommand = os.environ['KUBEDEV_SYSTEMTEST_DAEMON_DOCKER_COMMAND']
+cronJob = os.environ['KUBEDEV_SYSTEMTEST_DAEMON_CRONJOB']
+kubeConfig = os.environ['KUBEDEV_SYSTEMTEST_DAEMON_KUBECONFIG']
+kubeConfigFile = '/tmp/kube_config'
 
-def generate_command_output(cmd: str):
-    proc = subprocess.Popen(['/bin/sh', '-c', cmd], stdout=subprocess.PIPE)
-    for line in proc.stdout.readlines():
-        yield line
-
+lastExecutedJob = None
 
 def create_app():
     app = Flask(__name__)
+
+    with open(kubeConfigFile, 'w') as f:
+        f.write(kubeConfig)
 
     @app.route('/execute', methods=['POST'])
     def execute():
@@ -21,7 +25,9 @@ def create_app():
         if not 'Api-Key' in headers or headers['Api-Key'] != apiKey:
             return "Invalid Api-Key", 401
         else:
-            print(f'Run docker command {dockerCommand}...')
-            return Response(generate_command_output(dockerCommand), mimetype="text/plain")
+            print(f'Running cronjob')
+            jobName = f"temp-job-{str(uuid4())[0:8]}"
+            lastExecutedJob = jobName
+            return Response(run_cronjob(kubeConfigFile, cronJob, jobName), mimetype="text/plain")
 
     return app
